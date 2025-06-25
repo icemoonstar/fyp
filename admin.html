@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard - TrustShield</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #1d2b64, #f8cdda);
+      min-height: 100vh;
+      padding: 20px;
+      color: #333;
+      animation: fadeIn 1.5s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .dashboard {
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+      max-width: 1000px;
+      margin: auto;
+    }
+
+    h1, h2 {
+      color: #1d2b64;
+      margin-bottom: 20px;
+    }
+
+    button {
+      background: #1d2b64;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      float: right;
+      margin-bottom: 20px;
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+
+    button:hover {
+      background: #111a3d;
+      transform: translateY(-2px);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 40px;
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    th, td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      background-color: #f0f0f0;
+    }
+
+    tr:hover {
+      background-color: #f9f9f9;
+    }
+
+    @media (max-width: 768px) {
+      .dashboard {
+        padding: 20px;
+      }
+
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+
+      th, td {
+        text-align: right;
+        position: relative;
+        padding-left: 50%;
+      }
+
+      th::before, td::before {
+        position: absolute;
+        left: 15px;
+        width: 45%;
+        white-space: nowrap;
+        font-weight: bold;
+      }
+
+      thead { display: none; }
+
+      td:nth-of-type(1)::before { content: "Time"; }
+      td:nth-of-type(2)::before { content: "Email"; }
+      td:nth-of-type(3)::before { content: "IP"; }
+      td:nth-of-type(4)::before { content: "Result"; }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <button id="logoutBtn">Logout</button>
+    <h1>Admin Dashboard</h1>
+
+    <h2>All Users</h2>
+    <table id="userTable">
+      <thead><tr><th>Email</th><th>Role</th><th>Known IPs</th></tr></thead>
+      <tbody></tbody>
+    </table>
+
+    <h2>Access Logs</h2>
+    <table id="logTable">
+      <thead><tr><th>Time</th><th>Email</th><th>IP</th><th>Result</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import { getAuth, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+    import { getFirestore, collection, getDocs, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBtrbsrvFNkJ_QL94nz5aGlrbGexoab7lY",
+      authDomain: "firm-source-440003-a8.firebaseapp.com",
+      projectId: "firm-source-440003-a8"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    onAuthStateChanged(auth, user => {
+      if (!user) return location.href = 'login.html';
+      loadUsers();
+      loadLogs();
+    });
+
+    async function loadUsers() {
+      const snapshot = await getDocs(collection(db, 'users'));
+      const table = document.querySelector('#userTable tbody');
+      table.innerHTML = '';
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const row = `<tr><td>${data.email}</td><td>${data.role}</td><td>${(data.knownIps || []).join('<br>')}</td></tr>`;
+        table.innerHTML += row;
+      });
+    }
+
+    async function loadLogs() {
+      const snapshot = await getDocs(collection(db, 'logs'));
+      const table = document.querySelector('#logTable tbody');
+      table.innerHTML = '';
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const ts = data.timestamp?.toDate?.();
+        const timeStr = ts ? ts.toLocaleString() : 'Invalid Timestamp';
+        const row = `<tr><td>${timeStr}</td><td>${data.email}</td><td>${data.ip}</td><td>${data.result}</td></tr>`;
+        table.innerHTML += row;
+      });
+    }
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      signOut(auth).then(() => location.href = 'login.html');
+    });
+  </script>
+</body>
+</html>
