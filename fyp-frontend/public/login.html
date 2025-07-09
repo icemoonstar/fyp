@@ -325,15 +325,20 @@
           }
         }
 
-       async function logAccess(email, result) {
-        const ip = await getUserIP();
-        await addDoc(collection(db, 'logs'), {
-          email,
-          ip,
-          result,
-          timestamp: serverTimestamp()
-        });
-      }
+          async function logAccess(email, result) {
+            const ip = await getUserIP();
+            try {
+              await fetch('https://fyp-1-xbt3.onrender.com/logs', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, ip, result })
+              });
+            } catch (err) {
+              console.error('❌ Failed to log access:', err);
+            }
+          }
 
       async function verifyTotp() {
         const code = document.getElementById("totpCode").value.trim();
